@@ -1,4 +1,9 @@
 package com.CasePilot.CasePilot.chat;
 
-public interface ChatRepository {
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface ChatRepository extends ReactiveMongoRepository<ChatEntity,String> {
 }
