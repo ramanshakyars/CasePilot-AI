@@ -39,14 +39,14 @@ public class ChatServiceImpl implements ChatService {
                 .model(chatRequestDto.getModel())
                 .createdAt(LocalDateTime.now())
                 .build();
-        chatRepository.save(conversation);
+
+        ChatEntity savedConversation = chatRepository.save(conversation).block();
 
         ChatResponseDto chatResponseDto = new ChatResponseDto();
-        chatResponseDto.setResponse(response.getResponse());
-        chatResponseDto.setId(conversation.getId());
-        chatResponseDto.setModel(chatRequestDto.getModel());
-        chatResponseDto.setCreatedAt(conversation.getCreatedAt());
-       // saveHistory(chatRequestDto);
+        chatResponseDto.setResponse(savedConversation.getResponse());
+        chatResponseDto.setId(savedConversation.getId());
+        chatResponseDto.setModel(savedConversation.getModel());
+        chatResponseDto.setCreatedAt(savedConversation.getCreatedAt());
         return chatResponseDto;
     }
 
