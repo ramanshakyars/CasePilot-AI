@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 public class ChatEntity {
     @Id
     private String Id;
+    private String title;
     private String prompt;
     private String model;
     private String response;

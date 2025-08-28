@@ -9,4 +9,5 @@ import java.util.List;
 public interface ChatService {
    ChatResponseDto generateSolution(ChatRequestDto chatRequestDto);
    List <ChatHistoryResponseDto> getChatHistory();
+   List<ChatResponseDto> loadChatById(String chatId);
 }

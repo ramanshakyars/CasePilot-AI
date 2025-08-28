@@ -20,10 +20,17 @@ public class ChatController {
         return ResponseEntity.ok(chatService.generateSolution(chatRequestDto));
     }
 
-    @GetMapping("/history")
+    @GetMapping("history")
     public ResponseEntity<List<ChatHistoryResponseDto>> getChatHistory() {
         List<ChatHistoryResponseDto> history = chatService.getChatHistory();
         return ResponseEntity.ok(history);
     }
+
+
+    @GetMapping("/{chatId}")
+    public ResponseEntity<List<ChatResponseDto>> loadConversationById(@PathVariable String chatId) {
+        return ResponseEntity.ok(chatService.loadChatById(chatId));
+    }
+
 
 }
