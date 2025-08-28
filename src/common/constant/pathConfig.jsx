@@ -5,6 +5,7 @@ const pathConfig = {
 
     CHAT_HISTORY: `${BASE_URL}/chat/history`,
     CHAT_HISTORY_DELETE: `${BASE_URL}/chat`,
+    CHAT_HISTORY_RENAME: `${BASE_URL}/chat`,
 
    
 };
