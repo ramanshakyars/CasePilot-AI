@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { styled, useTheme } from '@mui/material/styles';
 import {
   Box,
@@ -8,17 +8,19 @@ import {
   IconButton,
   Typography,
   List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   CssBaseline,
   Divider
 } from '@mui/material';
-import { Menu as MenuIcon, ChevronLeft as ChevronLeftIcon, Inbox as InboxIcon, Mail as MailIcon } from '@mui/icons-material';
+import {
+  Menu as MenuIcon,
+  ChevronLeft as ChevronLeftIcon
+} from '@mui/icons-material';
+import ListItemButton from '@mui/material/ListItemButton';
+import HistoryDrawer from '../components/historyDrawer';
 
 const drawerWidth = 200;
 
-const openedMixin = (theme) => ({
+const openedMixin = theme => ({
   width: drawerWidth,
   transition: theme.transitions.create('width', {
     easing: theme.transitions.easing.sharp,
@@ -26,7 +28,7 @@ const openedMixin = (theme) => ({
   }),
   overflowX: 'hidden'
 });
-const closedMixin = (theme) => ({
+const closedMixin = theme => ({
   transition: theme.transitions.create('width', {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen
@@ -36,32 +38,32 @@ const closedMixin = (theme) => ({
 });
 
 const AppBar = styled(MuiAppBar, {
-  shouldForwardProp: (prop) => prop !== 'open'
+  shouldForwardProp: prop => prop !== 'open'
 })(({ theme, open }) => ({
   zIndex: theme.zIndex.drawer + 1,
   ...(open && { marginLeft: drawerWidth, width: `calc(100% - ${drawerWidth}px)` })
 }));
 
 const Drawer = styled(MuiDrawer, {
-  shouldForwardProp: (prop) => prop !== 'open'
+  shouldForwardProp: prop => prop !== 'open'
 })(({ theme, open }) => ({
   width: drawerWidth,
   flexShrink: 0,
   whiteSpace: 'nowrap',
   ...(open
     ? { ...openedMixin(theme), '& .MuiDrawer-paper': openedMixin(theme) }
-    : { ...closedMixin(theme), '& .MuiDrawer-paper': closedMixin(theme) }
-  )
+    : { ...closedMixin(theme), '& .MuiDrawer-paper': closedMixin(theme) })
 }));
 
 export default function MiniDrawer({ children }) {
   const theme = useTheme();
-  const [open, setOpen] = React.useState(true);
+  const [open, setOpen] = useState(true);
+  const [active, setActive] = useState('New');
 
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-      <AppBar position="fixed" open={open}>
+      <AppBar position="fixed" open={open} sx={{ backgroundColor: 'black' }}>
         <Toolbar>
           <IconButton
             color="inherit"
@@ -72,7 +74,7 @@ export default function MiniDrawer({ children }) {
             <MenuIcon sx={{ color: 'white' }} />
           </IconButton>
           <Typography variant="h6" sx={{ color: 'white' }}>
-            AI Test Case Generator
+            Case Pilot
           </Typography>
         </Toolbar>
       </AppBar>
@@ -80,9 +82,7 @@ export default function MiniDrawer({ children }) {
       <Drawer
         variant="permanent"
         open={open}
-        PaperProps={{
-          sx: { backgroundColor: 'black', color: 'white' },
-        }}
+        PaperProps={{ sx: { backgroundColor: 'black', color: 'white' } }}
       >
         <Toolbar>
           <IconButton onClick={() => setOpen(false)}>
@@ -90,17 +90,20 @@ export default function MiniDrawer({ children }) {
           </IconButton>
         </Toolbar>
         <Divider sx={{ bgcolor: 'grey.800' }} />
-
         <List>
-          {['New', 'History', 'Delete'].map((text, idx) => (
-            <ListItem key={text} disablePadding>
-              <ListItemIcon sx={{ color: 'white' }}>
-                {idx % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-              </ListItemIcon>
-              {open && <ListItemText primary={text} />}
-            </ListItem>
+          {['New', 'History', 'Delete'].map(text => (
+            <ListItemButton
+              key={text}
+              onClick={() => setActive(text)}
+              sx={{ pl: open ? 4 : 2 }}
+            >
+              {open && (
+                <Typography sx={{ color: 'white' }}>{text}</Typography>
+              )}
+            </ListItemButton>
           ))}
         </List>
+        {active === 'History' && <HistoryDrawer open={open} />}
       </Drawer>
 
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
