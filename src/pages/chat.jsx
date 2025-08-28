@@ -114,7 +114,6 @@ export default function MiniDrawer({ children, mode, setMode }) {
     const menuItems = [
         { text: 'New', icon: <NewIcon /> },
         { text: 'History', icon: <HistoryIcon /> },
-        { text: 'Delete', icon: <DeleteIcon /> },
     ];
 
     return (
