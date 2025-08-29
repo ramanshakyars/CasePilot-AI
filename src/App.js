@@ -13,6 +13,9 @@ function App() {
   const theme = useMemo(() => getTheme(mode), [mode]);
   const [globalLoading, setGlobalLoading] = useState(false);
 
+  // <<<<---- NEW STATE ---->>>>
+  const [selectedChatId, setSelectedChatId] = useState(null);
+
   useEffect(() => {
     configureLoading(setGlobalLoading);
   }, []);
@@ -22,9 +25,14 @@ function App() {
       <LoaderOverlay open={globalLoading} />
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <MiniDrawer mode={mode} setMode={setMode}>
+        <MiniDrawer
+          mode={mode}
+          setMode={setMode}
+          selectedChatId={selectedChatId}
+          setSelectedChatId={setSelectedChatId}
+        >
           <div className="h-full flex items-center justify-center p-4">
-            <ChatPanel />
+            <ChatPanel chatId={selectedChatId} />
           </div>
         </MiniDrawer>
       </ThemeProvider>

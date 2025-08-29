@@ -21,11 +21,11 @@ import {
 } from '@mui/icons-material';
 import pathConfig from '../common/constant/pathConfig';
 
-export default function HistoryDrawer({ open }) {
+export default function HistoryDrawer({ open, setSelectedChatId }) {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
-    const [selectedChatId, setSelectedChatId] = useState(null);
+    const [selectedChatId, setMenuSelectedChatId] = useState(null);
 
     useEffect(() => {
         if (open) {
@@ -43,14 +43,12 @@ export default function HistoryDrawer({ open }) {
     }, [open]);
 
     const handleMenuOpen = (event, chatId) => {
-        setSelectedChatId(chatId);
+        setMenuSelectedChatId(chatId);
         setAnchorEl(event.currentTarget);
-
     };
 
     const handleMenuClose = () => {
         setAnchorEl(null);
-
     };
 
     const handleDelete = (chatId) => {
@@ -69,7 +67,6 @@ export default function HistoryDrawer({ open }) {
     };
 
     const handleRename = (chatId) => {
-        
         console.log('Rename chat:', chatId);
         // Add your rename logic here
         handleMenuClose();
@@ -105,6 +102,7 @@ export default function HistoryDrawer({ open }) {
                                         backgroundColor: 'action.hover',
                                     }
                                 }}
+                                onClick={() => setSelectedChatId(chat.chatId)}
                             >
                                 <ListItemIcon>
                                     <Avatar sx={{ width: 30, height: 30, bgcolor: 'primary.main' }}>

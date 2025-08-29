@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { styled, useTheme } from '@mui/material/styles';
-import {Box,Drawer as MuiDrawer,AppBar as MuiAppBar,Toolbar,IconButton,Typography,List,CssBaseline,Divider,ListItemIcon,ListItemText,useColorScheme} from '@mui/material';
+import { Box, Drawer as MuiDrawer, AppBar as MuiAppBar, Toolbar, IconButton, Typography, List, CssBaseline, Divider, ListItemIcon, ListItemText } from '@mui/material';
 import {
     Menu as MenuIcon,
     ChevronLeft as ChevronLeftIcon,
@@ -89,7 +89,7 @@ const Logo = () => (
     </div>
 );
 
-export default function MiniDrawer({ children, mode, setMode }) {
+export default function MiniDrawer({ children, mode, setMode, selectedChatId, setSelectedChatId }) {
     const theme = useTheme();
     const [open, setOpen] = useState(true);
     const [active, setActive] = useState('New');
@@ -165,7 +165,12 @@ export default function MiniDrawer({ children, mode, setMode }) {
                         </ListItemButton>
                     ))}
                 </List>
-                {active === 'History' && <HistoryDrawer open={open} />}
+                {active === 'History' && (
+                    <HistoryDrawer
+                        open={open}
+                        setSelectedChatId={setSelectedChatId}
+                    />
+                )}
             </Drawer>
 
             <Box
