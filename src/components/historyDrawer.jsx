@@ -11,7 +11,13 @@ import {
     MenuItem,
     Skeleton,
     Avatar,
-    Typography
+    Typography,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
+    Button
 } from '@mui/material';
 import {
     History as HistoryIcon,
@@ -26,6 +32,10 @@ export default function HistoryDrawer({ open, setSelectedChatId }) {
     const [loading, setLoading] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
     const [selectedChatId, setMenuSelectedChatId] = useState(null);
+
+    // For rename dialog
+    const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+    const [renameTitle, setRenameTitle] = useState("");
 
     useEffect(() => {
         if (open) {
@@ -53,23 +63,54 @@ export default function HistoryDrawer({ open, setSelectedChatId }) {
 
     const handleDelete = (chatId) => {
         setLoading(true);
-        const url = `${pathConfig.CHAT_HISTORY_DELETE}/${chatId}`
+        const url = `${pathConfig.CHAT_HISTORY_DELETE}/${chatId}`;
         httpService.delete(url)
             .then(res => {
                 setHistory(res.data);
                 setLoading(false);
             })
             .catch(err => {
-                console.error('Failed to load history:', err);
+                console.error('Failed to delete chat:', err);
                 setLoading(false);
             });
         handleMenuClose();
     };
 
+    // Open rename dialog with pre-filled title
     const handleRename = (chatId) => {
-        console.log('Rename chat:', chatId);
-        // Add your rename logic here
+        const chat = history.find(c => c.chatId === chatId);
+        if (!chat) return;
+
+        setRenameTitle(chat.title || "");
+        setRenameDialogOpen(true);
         handleMenuClose();
+    };
+
+    // Call API to rename chat
+    const handleRenameSubmit = () => {
+        if (!renameTitle.trim()) {
+            setRenameDialogOpen(false);
+            return;
+        }
+
+        setLoading(true);
+        const url = `${pathConfig.CHAT_HISTORY_RENAME}/${selectedChatId}?title=${encodeURIComponent(renameTitle)}`;
+        httpService.put(url)
+            .then(() => {
+                // Update frontend list
+                setHistory(prevHistory =>
+                    prevHistory.map(chat =>
+                        chat.chatId === selectedChatId ? { ...chat, title: renameTitle } : chat
+                    )
+                );
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("Failed to rename chat:", err);
+                setLoading(false);
+            });
+
+        setRenameDialogOpen(false);
     };
 
     return (
@@ -127,7 +168,6 @@ export default function HistoryDrawer({ open, setSelectedChatId }) {
                                         <MoreIcon fontSize="small" />
                                     </IconButton>
                                 </ListItemSecondaryAction>
-
                             </ListItem>
                         ))}
                     </List>
@@ -157,6 +197,26 @@ export default function HistoryDrawer({ open, setSelectedChatId }) {
                             Delete
                         </MenuItem>
                     </Menu>
+
+                    {/* Rename Dialog */}
+                    <Dialog open={renameDialogOpen} onClose={() => setRenameDialogOpen(false)}>
+                        <DialogTitle>Rename Chat</DialogTitle>
+                        <DialogContent>
+                            <TextField
+                                autoFocus
+                                margin="dense"
+                                label="Chat Title"
+                                fullWidth
+                                variant="outlined"
+                                value={renameTitle}
+                                onChange={(e) => setRenameTitle(e.target.value)}
+                            />
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => setRenameDialogOpen(false)}>Cancel</Button>
+                            <Button onClick={handleRenameSubmit} variant="contained" color="primary">Save</Button>
+                        </DialogActions>
+                    </Dialog>
                 </>
             ) : (
                 <div className="text-center py-8 text-gray-500">

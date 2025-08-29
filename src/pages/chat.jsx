@@ -103,6 +103,14 @@ export default function MiniDrawer({ children, mode, setMode, selectedChatId, se
         { text: 'History', icon: <HistoryIcon /> },
     ];
 
+    // <<<<---- CHANGE THIS FUNCTION ---->>>>
+    const handleMenuClick = (itemText) => {
+        setActive(itemText);
+        if (itemText === "New") {
+            setSelectedChatId(null); // clear chat on "New"
+        }
+    };
+
     return (
         <Box sx={{ display: 'flex' }}>
             <CssBaseline />
@@ -134,11 +142,11 @@ export default function MiniDrawer({ children, mode, setMode, selectedChatId, se
                     </IconButton>
                 </Toolbar>
                 <Divider />
-                <List sx={{ mt: 1 }}>
+               <List sx={{ mt: 1 }}>
                     {menuItems.map((item) => (
                         <ListItemButton
                             key={item.text}
-                            onClick={() => setActive(item.text)}
+                            onClick={() => handleMenuClick(item.text)}
                             selected={active === item.text}
                             sx={{
                                 minHeight: 48,
@@ -165,11 +173,11 @@ export default function MiniDrawer({ children, mode, setMode, selectedChatId, se
                         </ListItemButton>
                     ))}
                 </List>
-                {active === 'History' && (
-                    <HistoryDrawer
-                        open={open}
-                        setSelectedChatId={setSelectedChatId}
-                    />
+                 {active === 'History' && (
+                  <HistoryDrawer
+                    open={open}
+                    setSelectedChatId={setSelectedChatId}
+                  />
                 )}
             </Drawer>
 
