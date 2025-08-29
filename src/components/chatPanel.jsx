@@ -6,7 +6,8 @@ import pathConfig from "../common/constant/pathConfig";
 
 function ChatPanel() {
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]); // {id, text, sender}
+  const [messages, setMessages] = useState([]);
+  const [chatId, setChatId] = useState(null);
   const [chatLoading, setChatLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -14,34 +15,42 @@ function ChatPanel() {
     e.preventDefault();
     if (!message.trim()) return;
 
-    // Add user message
     const userMsg = { id: Date.now(), text: message, sender: "user" };
     setMessages((prev) => [...prev, userMsg]);
     setMessage("");
     setChatLoading(true);
 
     const body = {
-      "chatId": messages[messages.length - 1]?.chatId,
-      "model": "codellama:7b",
-      "prompt": message,
-      "stream": false
+      chatId: chatId,
+      model: "codellama:7b",
+      prompt: message,
+      stream: false
     };
 
     try {
-      const response = await httpService.post(pathConfig.SEND_MESSAGE, body);      
+      const response = await httpService.post(pathConfig.SEND_MESSAGE, body);
       const respMsg = response?.data?.messages?.[0]?.response;
-      const chatId = response?.data?.chatId
+      const newChatId = response?.data?.chatId;
+      if (newChatId) setChatId(newChatId);
+
       if (respMsg) {
         setMessages((prev) => [
           ...prev,
-          { id: Date.now() + 1, text: respMsg.trim(), sender: "assistant" }
+          {
+            id: Date.now() + 1,
+            text: respMsg.trim(),
+            sender: "assistant",
+          },
         ]);
       }
     } catch (err) {
-      
       setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 2, text: "Error fetching response.", sender: "assistant" }
+        {
+          id: Date.now() + 2,
+          text: "Error fetching response.",
+          sender: "assistant",
+        },
       ]);
       console.error(err);
     } finally {
@@ -49,18 +58,13 @@ function ChatPanel() {
     }
   };
 
-  // scroll to bottom whenever messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, chatLoading]);
 
-  // Loader bubble for chat
+
   const LoaderBubble = () => (
-    <Box sx={{
-      display: "flex",
-      mb: 1,
-      justifyContent: "flex-start"
-    }}>
+    <Box sx={{ display: "flex", mb: 1, justifyContent: "flex-start" }}>
       <Box
         sx={{
           display: "inline-block",
@@ -90,7 +94,7 @@ function ChatPanel() {
         width: "100%",
         borderRadius: 2,
         bgcolor: "background.paper",
-        position: "relative"
+        position: "relative",
       }}
     >
       {/* Messages area */}
@@ -98,35 +102,52 @@ function ChatPanel() {
         {messages.length > 0 ? (
           <>
             {messages.map((m) => (
-              <Box key={m.id} sx={{ mb: 1, display: "flex", justifyContent: m.sender === "user" ? "flex-end" : "flex-start" }}>
+              <Box
+                key={m.id}
+                sx={{
+                  mb: 1,
+                  display: "flex",
+                  justifyContent:
+                    m.sender === "user" ? "flex-end" : "flex-start",
+                }}
+              >
                 <Box
                   sx={{
                     display: "inline-block",
                     px: 2,
                     py: 1,
                     borderRadius: 2,
-                    bgcolor: m.sender === "user" ? "primary.main" : "grey.100",
-                    color: m.sender === "user" ? "primary.contrastText" : "text.primary",
+                    bgcolor:
+                      m.sender === "user" ? "primary.main" : "grey.100",
+                    color:
+                      m.sender === "user"
+                        ? "primary.contrastText"
+                        : "text.primary",
                     maxWidth: "70%",
                     wordBreak: "break-word",
                   }}
                 >
-                  <Typography variant="body2" sx={{ whiteSpace: "pre-line" }}>{m.text}</Typography>
+                  <Typography variant="body2" sx={{ whiteSpace: "pre-line" }}>
+                    {m.text}
+                  </Typography>
                 </Box>
               </Box>
             ))}
-            {/* Typing loader for assistant */}
             {chatLoading && <LoaderBubble />}
           </>
         ) : (
-          <Typography variant="body2" color="text.secondary" fontStyle="italic">
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            fontStyle="italic"
+          >
             No messages yet
           </Typography>
         )}
         <div ref={messagesEndRef} />
       </Box>
 
-      {/* Chat input area */}
+      {/* Input area */}
       <Box
         component="form"
         onSubmit={handleSend}
@@ -141,7 +162,12 @@ function ChatPanel() {
           onChange={(e) => setMessage(e.target.value)}
           disabled={chatLoading}
         />
-        <IconButton type="submit" color="primary" sx={{ ml: 1 }} disabled={chatLoading}>
+        <IconButton
+          type="submit"
+          color="primary"
+          sx={{ ml: 1 }}
+          disabled={chatLoading}
+        >
           <SendIcon />
         </IconButton>
       </Box>
