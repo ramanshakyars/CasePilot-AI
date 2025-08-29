@@ -1,7 +1,10 @@
-
-
 import axios from 'axios';
 
+let setGlobalLoading = null;
+
+export const configureLoading = (setLoadingFn) => {
+    setGlobalLoading = setLoadingFn;
+};
 
 const apiClient = axios.create({
     baseURL: process.env.REACT_APP_API_BASE_URL || '', // Configure via .env
@@ -13,19 +16,23 @@ const apiClient = axios.create({
 // Optional: Request interceptor to attach tokens or headers
 apiClient.interceptors.request.use(
     (config) => {
-        // Example: Attach token if available
-        // const token = localStorage.getItem('authToken');
-        // if (token) config.headers.Authorization = `Bearer ${token}`;
+        if (typeof setGlobalLoading === 'function') setGlobalLoading(true);
         return config;
     },
-    (error) => Promise.reject(error)
+    (error) => {
+        if (typeof setGlobalLoading === 'function') setGlobalLoading(false);
+        return Promise.reject(error);
+    }
 );
 
 // Optional: Response interceptor for global error handling or transformations
 apiClient.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        if (typeof setGlobalLoading === 'function') setGlobalLoading(false);
+        return response;
+    },
     (error) => {
-        // Handle global errors, e.g., 401 Unauthorized
+        if (typeof setGlobalLoading === 'function') setGlobalLoading(false);
         return Promise.reject(error);
     }
 );
@@ -40,7 +47,6 @@ const httpService = {
     patch: (url, data, config = {}) => apiClient.patch(url, data, config),
 
     delete: (url, dataOrConfig = {}) => {
-        
         const config = dataOrConfig.data ? dataOrConfig : { data: dataOrConfig };
         return apiClient.delete(url, config);
     },
