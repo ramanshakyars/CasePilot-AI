@@ -1,18 +1,19 @@
 package com.CasePilot.CasePilot.chat.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
-
 @Data
-public class ChatResponseDto {
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ChatMessage {
     private String id;
-    private String chatId;
+    private String prompt;
+    private String response;
     private String model;
     private LocalDateTime createdAt;
-    private String response;
-    private String prompt;
-
 }

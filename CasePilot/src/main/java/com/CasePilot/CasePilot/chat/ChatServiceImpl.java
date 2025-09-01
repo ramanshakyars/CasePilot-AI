@@ -2,8 +2,10 @@ package com.CasePilot.CasePilot.chat;
 
 import com.CasePilot.CasePilot.chat.chatHistory.dto.ChatHistory;
 import com.CasePilot.CasePilot.chat.chatHistory.dto.ChatHistoryResponseDto;
+import com.CasePilot.CasePilot.chat.dto.ChatMessage;
 import com.CasePilot.CasePilot.chat.dto.ChatRequestDto;
 import com.CasePilot.CasePilot.chat.dto.ChatResponseDto;
+import com.CasePilot.CasePilot.chat.dto.ConversationResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -12,6 +14,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -19,52 +22,53 @@ public class ChatServiceImpl implements ChatService {
     private final ChatRepository chatRepository;
     private final WebClient webClient = WebClient.builder().baseUrl("http://localhost:11434").build();
 
-
     @Override
-    public ChatResponseDto generateSolution(ChatRequestDto chatRequestDto) {
+    public ConversationResponseDto createOrContinueChat(ChatRequestDto chatRequestDto) {
         ChatResponseDto response = webClient.post()
                 .uri("/api/generate")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(Map.of(
-                        "model", chatRequestDto.getModel(),
-                        "prompt", chatRequestDto.getPrompt(),
-                        "stream", false
-                ))
+                .bodyValue(
+                        java.util.Map.of(
+                                "model", chatRequestDto.getModel(),
+                                "prompt", chatRequestDto.getPrompt(),
+                                "stream", false
+                        )
+                )
                 .retrieve()
                 .bodyToMono(ChatResponseDto.class)
                 .block();
 
-        // generate short title
-        String prompt = chatRequestDto.getPrompt();
-        String title = prompt.length() > 30 ? prompt.substring(0, 30) + "..." : prompt;
-
         LocalDateTime now = LocalDateTime.now();
 
-        ChatEntity conversation = ChatEntity.builder()
-                .prompt(prompt)
+        ChatMessage message = ChatMessage.builder()
+                .prompt(chatRequestDto.getPrompt())
                 .response(response.getResponse())
                 .model(chatRequestDto.getModel())
-                .title(title)
                 .createdAt(now)
                 .build();
 
-        ChatEntity savedConversation = chatRepository.save(conversation).block();
+        ChatEntity chatEntity;
 
-        ChatResponseDto chatResponseDto = new ChatResponseDto();
-        chatResponseDto.setId(savedConversation.getId());
-        chatResponseDto.setResponse(savedConversation.getResponse());
-        chatResponseDto.setModel(savedConversation.getModel());
-        chatResponseDto.setCreatedAt(savedConversation.getCreatedAt());
-        return chatResponseDto;
+        if (chatRequestDto.getChatId() == null || chatRequestDto.getChatId().isBlank()) {
+            // New chat
+            String title = message.getPrompt().length() > 30 ? message.getPrompt().substring(0, 30) + "..." : message.getPrompt();
+            chatEntity = ChatEntity.builder()
+                    .title(title)
+                    .createdAt(now)
+                    .updatedAt(now)
+                    .messages(new java.util.ArrayList<>(List.of(message)))
+                    .build();
+        } else {
+            // Existing chat
+            chatEntity = chatRepository.findById(chatRequestDto.getChatId()).block();
+            if (chatEntity == null) throw new RuntimeException("Chat not found");
+            chatEntity.getMessages().add(message);
+            chatEntity.setUpdatedAt(now);
+        }
+        ChatEntity saved = chatRepository.save(chatEntity).block();
+
+        return toConversationDto(saved);
     }
-
-
-  /*  private void saveHistory(ChatRequestDto chatRequestDto){
-        ChatHistory chatHistory = new ChatHistory();
-        chatHistory
-        return chatRepository.save(chatRequestDto);
-    }*/
-
 
     @Override
     public List<ChatHistoryResponseDto> getChatHistory() {
@@ -74,33 +78,51 @@ public class ChatServiceImpl implements ChatService {
                     dto.setChatId(chat.getId());
                     dto.setTitle(chat.getTitle());
                     dto.setCreatedAt(chat.getCreatedAt());
+                    dto.setUpdatedAt(chat.getUpdatedAt());
                     return dto;
                 })
-                .collectList()
-                .block();
+                .collectList().block();
     }
-
 
     @Override
-    public List<ChatResponseDto> loadChatById(String chatId) {
-        return chatRepository.findById(chatId)   // returns Mono<ChatEntity>
-                .map(chat -> {
-                    ChatResponseDto dto = new ChatResponseDto();
-                    dto.setId(chat.getId());
-                    dto.setPrompt(chat.getPrompt());
-                    dto.setResponse(chat.getResponse());
-                    dto.setModel(chat.getModel());
-                    dto.setCreatedAt(chat.getCreatedAt());
-                    return List.of(dto); // wrap single chat into List
-                })
-                .defaultIfEmpty(List.of()) // empty if not found
-                .block();
+    public ConversationResponseDto loadChatById(String chatId) {
+        ChatEntity chatEntity = chatRepository.findById(chatId).block();
+        if (chatEntity == null) throw new RuntimeException("Chat not found");
+        return toConversationDto(chatEntity);
     }
 
+    @Override
+    public void renameChat(String chatId, String newTitle) {
+        ChatEntity chatEntity = chatRepository.findById(chatId).block();
+        if (chatEntity == null) throw new RuntimeException("Chat not found");
+        chatEntity.setTitle(newTitle);
+        chatEntity.setUpdatedAt(LocalDateTime.now());
+        chatRepository.save(chatEntity).block();
+    }
 
+    @Override
+    public void deleteChat(String chatId) {
+        chatRepository.deleteById(chatId).block();
+    }
 
-
-
+    private ConversationResponseDto toConversationDto(ChatEntity chatEntity) {
+        ConversationResponseDto dto = new ConversationResponseDto();
+        dto.setChatId(chatEntity.getId());
+        dto.setTitle(chatEntity.getTitle());
+        dto.setMessages(
+                chatEntity.getMessages().stream().map(msg -> {
+                    ChatResponseDto rdto = new ChatResponseDto();
+                    rdto.setId(msg.getId());
+                    rdto.setChatId(chatEntity.getId());
+                    rdto.setModel(msg.getModel());
+                    rdto.setPrompt(msg.getPrompt());
+                    rdto.setResponse(msg.getResponse());
+                    rdto.setCreatedAt(msg.getCreatedAt());
+                    return rdto;
+                }).collect(Collectors.toList())
+        );
+        return dto;
+    }
 
 
 }

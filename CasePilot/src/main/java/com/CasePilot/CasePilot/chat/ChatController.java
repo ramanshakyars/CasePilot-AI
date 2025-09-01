@@ -3,6 +3,7 @@ package com.CasePilot.CasePilot.chat;
 import com.CasePilot.CasePilot.chat.chatHistory.dto.ChatHistoryResponseDto;
 import com.CasePilot.CasePilot.chat.dto.ChatRequestDto;
 import com.CasePilot.CasePilot.chat.dto.ChatResponseDto;
+import com.CasePilot.CasePilot.chat.dto.ConversationResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,21 +16,35 @@ import java.util.List;
 public class ChatController {
     private final ChatService chatService;
 
-    @PostMapping("generate")
-    public ResponseEntity<ChatResponseDto> generateSolution(@RequestBody ChatRequestDto chatRequestDto){
-        return ResponseEntity.ok(chatService.generateSolution(chatRequestDto));
+
+    @PostMapping("message")
+    public ResponseEntity<ConversationResponseDto> newOrContinueChat(@RequestBody ChatRequestDto chatRequestDto){
+        return ResponseEntity.ok(chatService.createOrContinueChat(chatRequestDto));
     }
+
 
     @GetMapping("history")
     public ResponseEntity<List<ChatHistoryResponseDto>> getChatHistory() {
-        List<ChatHistoryResponseDto> history = chatService.getChatHistory();
-        return ResponseEntity.ok(history);
+        return ResponseEntity.ok(chatService.getChatHistory());
     }
 
 
     @GetMapping("/{chatId}")
-    public ResponseEntity<List<ChatResponseDto>> loadConversationById(@PathVariable String chatId) {
+    public ResponseEntity<ConversationResponseDto> loadConversationById(@PathVariable String chatId) {
         return ResponseEntity.ok(chatService.loadChatById(chatId));
+    }
+
+    @PutMapping("/rename/{chatId}")
+    public ResponseEntity<Void> renameChat(@PathVariable String chatId, @RequestParam String title) {
+        chatService.renameChat(chatId, title);
+        return ResponseEntity.ok().build();
+    }
+
+
+    @DeleteMapping("/{chatId}")
+    public ResponseEntity<Void> deleteChat(@PathVariable String chatId) {
+        chatService.deleteChat(chatId);
+        return ResponseEntity.ok().build();
     }
 
 
