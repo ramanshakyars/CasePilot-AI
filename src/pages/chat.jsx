@@ -142,7 +142,7 @@ export default function MiniDrawer({ children, mode, setMode, selectedChatId, se
                     </IconButton>
                 </Toolbar>
                 <Divider />
-               <List sx={{ mt: 1 }}>
+                <List sx={{ mt: 1 }}>
                     {menuItems.map((item) => (
                         <ListItemButton
                             key={item.text}
@@ -173,11 +173,11 @@ export default function MiniDrawer({ children, mode, setMode, selectedChatId, se
                         </ListItemButton>
                     ))}
                 </List>
-                 {active === 'History' && (
-                  <HistoryDrawer
-                    open={open}
-                    setSelectedChatId={setSelectedChatId}
-                  />
+                {active === 'History' && (
+                    <HistoryDrawer
+                        open={open}
+                        setSelectedChatId={setSelectedChatId}
+                    />
                 )}
             </Drawer>
 
@@ -185,13 +185,18 @@ export default function MiniDrawer({ children, mode, setMode, selectedChatId, se
                 component="main"
                 sx={{
                     flexGrow: 1,
-                    p: 3,
+                    p: 2,
                     backgroundColor: 'background.default',
-                    minHeight: '100vh'
+                    height: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column'
                 }}
             >
                 <Toolbar />
-                {children}
+                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    {children}
+                </Box>
+
             </Box>
         </Box>
     );

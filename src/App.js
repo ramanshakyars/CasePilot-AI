@@ -31,7 +31,7 @@ function App() {
           selectedChatId={selectedChatId}
           setSelectedChatId={setSelectedChatId}
         >
-          <div className="h-full flex items-center justify-center p-4">
+          <div className="h-full w-full flex flex-col">
             <ChatPanel chatId={selectedChatId} />
           </div>
         </MiniDrawer>

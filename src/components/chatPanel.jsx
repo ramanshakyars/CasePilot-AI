@@ -187,7 +187,15 @@ function ChatPanel({ chatId }) {
       <Box
         component="form"
         onSubmit={handleSend}
-        sx={{ display: "flex", p: 1, borderTop: 1, borderColor: "divider" }}
+        sx={{
+          display: "flex",
+          p: 1,
+          borderTop: 1,
+          borderColor: "divider",
+          position: "sticky",
+          bottom: 0,
+          bgcolor: "background.paper"
+        }}
       >
         <TextField
           fullWidth
@@ -197,6 +205,11 @@ function ChatPanel({ chatId }) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={chatLoading}
+          InputProps={{
+            sx: {
+              color: "text.primary",  
+            },
+          }}
         />
         <IconButton
           type="submit"
