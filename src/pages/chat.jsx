@@ -99,15 +99,15 @@ export default function MiniDrawer({ children, mode, setMode, selectedChatId, se
     };
 
     const menuItems = [
-        { text: 'New', icon: <NewIcon /> },
+        { text: 'New Chat', icon: <NewIcon /> },
         { text: 'History', icon: <HistoryIcon /> },
     ];
 
-    // <<<<---- CHANGE THIS FUNCTION ---->>>>
+  
     const handleMenuClick = (itemText) => {
         setActive(itemText);
         if (itemText === "New") {
-            setSelectedChatId(null); // clear chat on "New"
+            setSelectedChatId(null); 
         }
     };
 

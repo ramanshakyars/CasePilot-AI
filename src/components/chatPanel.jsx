@@ -177,7 +177,7 @@ function ChatPanel({ chatId }) {
             color="text.secondary"
             fontStyle="italic"
           >
-            No messages yet
+            QA Engineer here for your assistance.
           </Typography>
         )}
         <div ref={messagesEndRef} />
