@@ -13,7 +13,7 @@ function App() {
   const theme = useMemo(() => getTheme(mode), [mode]);
   const [globalLoading, setGlobalLoading] = useState(false);
 
-  // <<<<---- NEW STATE ---->>>>
+ 
   const [selectedChatId, setSelectedChatId] = useState(null);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ function App() {
 
   return (
     <>
-      <LoaderOverlay open={globalLoading} />
+      {/* <LoaderOverlay open={globalLoading} /> */}
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <MiniDrawer
