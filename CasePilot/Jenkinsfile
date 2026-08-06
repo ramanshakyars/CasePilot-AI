@@ -40,8 +40,9 @@ pipeline {
         }
 
         stage("Access Application"){
-            echo "Application is running at http://localhost:8081"
-        }
+           steps {
+                echo 'Application is running at http://localhost:8081'
+            }        }
 
     }
 
