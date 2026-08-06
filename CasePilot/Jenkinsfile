@@ -31,6 +31,14 @@ pipeline {
             }
         }
 
+        stage("Run docker image"){
+            sh 'docker run -d -p 8081:8081 ${IMAGE_NAME}:latest'
+        }
+
+        stage("Access Application"){
+            echo "Application is running at http://localhost:8081"
+        }
+
     }
 
     post {
