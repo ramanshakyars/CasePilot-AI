@@ -1,137 +1,45 @@
 pipeline {
     agent any
 
-    // Pipeline behavior options for strict execution and clean logging
-    options {
-        timeout(time: 30, unit: 'MINUTES')            // Stop pipeline if hanging (prevents stuck workers)
-        ansiColor('xterm')                             // Colorized terminal outputs
-        timestamps()                                   // Adds exact timestamps to every output line (great for performance debugging)
-        disableConcurrentBuilds()                      // Prevents build collisions on quick consecutive git pushes
-        buildDiscarder(logRotator(numToKeepStr: '10'))  // Keeps build logs clean, retaining last 10 builds
-    }
-
     environment {
-        APP_NAME     = 'casepilot'
-        IMAGE_NAME   = 'casepilot/backend'
-        DOCKER_TAG   = "${BUILD_NUMBER}-${GIT_COMMIT ? GIT_COMMIT[0..7] : 'local'}"
-        REGISTRY_HUB = 'registry.hub.docker.com'
+        IMAGE_NAME = "casepilot"
     }
 
     stages {
-        stage('01. Environment & SCM Checkout') {
+
+        stage('Checkout') {
             steps {
-                script {
-                    echo "=== [DEBUG] Pipeline Diagnostics & Initialization ==="
-                    echo "Workspace Directory: ${env.WORKSPACE}"
-                    echo "Building Branch: ${env.BRANCH_NAME ?: 'N/A'}"
-                    echo "Git Commit SHA: ${env.GIT_COMMIT ?: 'N/A'}"
-                    echo "Build Number: ${env.BUILD_NUMBER}"
-                }
                 checkout scm
-                // Ensure Gradle wrapper has execute permissions on Linux agent
+            }
+        }
+
+        stage('Give Permission') {
+            steps {
                 sh 'chmod +x gradlew'
             }
         }
 
-        stage('02. Code Analysis & Unit Tests') {
+        stage('Build Project') {
             steps {
-                echo "=== Executing Gradle Unit Tests ==="
-                // --stacktrace and --info parameters print complete stack traces for fast debugging of failed unit tests
-                sh './gradlew test --no-daemon --stacktrace --info'
-            }
-            post {
-                always {
-                    // Publish JUnit XML test results directly to Jenkins UI for visual report analysis
-                    junit allowEmptyResults: true, testResults: '**/build/test-results/test/*.xml'
-                }
+                sh './gradlew clean build'
             }
         }
 
-        stage('03. Package Application (Fat JAR)') {
+        stage('Build Docker Image') {
             steps {
-                echo "=== Packaging Executable Boot JAR ==="
-                sh './gradlew bootJar --no-daemon --stacktrace'
-            }
-            post {
-                success {
-                    // Archive built JAR binary artifact in Jenkins for deployment or audit
-                    archiveArtifacts artifacts: '**/build/libs/*.jar', allowEmptyArchive: true
-                }
+                sh 'docker build -t ${IMAGE_NAME}:latest .'
             }
         }
 
-        stage('04. Docker Image Build') {
-            steps {
-                echo "=== Building Docker Image: ${IMAGE_NAME}:${DOCKER_TAG} ==="
-                sh "docker build --no-cache -t ${IMAGE_NAME}:${DOCKER_TAG} -t ${IMAGE_NAME}:latest ."
-            }
-        }
-
-        stage('05. Container Health & Smoke Test') {
-            steps {
-                echo "=== Running Isolated Container Smoke Test ==="
-                script {
-                    def containerId = ""
-                    try {
-                        // Spin up fresh container in detached mode to verify launchability
-                        containerId = sh(
-                            script: "docker run -d -p 8080:8080 --name test-${APP_NAME}-${BUILD_NUMBER} ${IMAGE_NAME}:${DOCKER_TAG}",
-                            returnStdout: true
-                        ).trim()
-
-                        echo "Container launched with ID: ${containerId}"
-                        echo "Waiting 15 seconds for Spring Boot container initialization..."
-                        sleep 15
-
-                        // Verify HTTP readiness
-                        sh "curl -f http://localhost:8080/actuator/health || curl -I http://localhost:8080/ || true"
-                        echo "=== [SUCCESS] Container Smoke Test Passed ==="
-                    } catch (Exception e) {
-                        echo "=== [FAILURE DEBUG] Container failed startup or health check! Dumping container logs... ==="
-                        if (containerId != "") {
-                            sh "docker logs ${containerId} || true"
-                        }
-                        error("Smoke test failed: ${e.getMessage()}")
-                    } finally {
-                        if (containerId != "") {
-                            echo "Cleaning up temporary test container..."
-                            sh "docker rm -f ${containerId} || true"
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('06. Docker Image Push (Conditional)') {
-            when {
-                branch 'main'
-            }
-            steps {
-                echo "=== Pushing Docker Image to Registry ==="
-                /* 
-                 * To publish to Docker Hub / Private Registry, configure 'docker-credentials' in Jenkins:
-                 * withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                 *     sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin ${REGISTRY_HUB}"
-                 *     sh "docker push ${IMAGE_NAME}:${DOCKER_TAG}"
-                 *     sh "docker push ${IMAGE_NAME}:latest"
-                 * }
-                 */
-                echo "[INFO] Skipping remote push. Uncomment credential block in Jenkinsfile for Docker Registry deployment."
-            }
-        }
     }
 
     post {
-        always {
-            echo "=== Cleaning Up Workspace & Unused Images ==="
-            // Removes workspace directory post-build to conserve disk space on agent
-            cleanWs deleteDirs: true, notFailBuild: true
-        }
         success {
-            echo "=== Pipeline Completed Successfully! ==="
+            echo "Build Successful!"
         }
+
         failure {
-            echo "=== [CRITICAL FAILURE] Pipeline failed! Check stacktrace logs & JUnit reports above. ==="
+            echo "Build Failed!"
         }
     }
 }
