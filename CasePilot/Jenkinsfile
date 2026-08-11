@@ -2,9 +2,12 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "casepilot"
-        CONTAINER_NAME = "casepilot-container"
-    }
+    JAVA_HOME = "/usr/lib/jvm/temurin-17-jdk-amd64"
+    PATH = "${JAVA_HOME}/bin:${PATH}"
+
+    IMAGE_NAME = "casepilot"
+    CONTAINER_NAME = "casepilot-container"
+      }
 
     stages {
 
@@ -49,6 +52,17 @@ pipeline {
                 }
             }
         }
+
+
+        stage('Check Java') {
+          steps {
+        sh '''
+            echo "JAVA_HOME=$JAVA_HOME"
+            java -version
+            javac -version
+        '''
+          }
+}
 
         // ==========================================
         // 5. Stop Old Container
