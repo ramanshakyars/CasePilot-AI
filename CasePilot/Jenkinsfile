@@ -3,56 +3,124 @@ pipeline {
 
     environment {
         IMAGE_NAME = "casepilot"
+        CONTAINER_NAME = "casepilot-container"
     }
 
     stages {
 
+        // ==========================================
+        // 1. Checkout Code
+        // ==========================================
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
 
+        // ==========================================
+        // 2. Give Permission to Gradle Wrapper
+        // ==========================================
         stage('Give Permission') {
             steps {
-                sh 'chmod +x gradlew'
+                dir('CasePilot') {
+                    sh 'chmod +x gradlew'
+                }
             }
         }
 
+        // ==========================================
+        // 3. Build Spring Boot Project
+        // ==========================================
         stage('Build Project') {
             steps {
-                sh './gradlew clean build'
+                dir('CasePilot') {
+                    sh './gradlew clean build'
+                }
             }
         }
 
+        // ==========================================
+        // 4. Build Docker Image
+        // ==========================================
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t ${IMAGE_NAME}:latest .'
+                dir('CasePilot') {
+                    sh 'docker build -t ${IMAGE_NAME}:latest .'
+                }
             }
         }
 
-        stage("Run docker image"){
-
-            steps{
-                sh 'docker run -d -p 8081:8081 ${IMAGE_NAME}:latest'
+        // ==========================================
+        // 5. Stop Old Container
+        // ==========================================
+        stage('Stop Old Container') {
+            steps {
+                sh 'docker stop ${CONTAINER_NAME} || true'
             }
-           
         }
 
-        stage("Access Application"){
-           steps {
-                echo 'Application is running at http://localhost:8081'
-            }        }
+        // ==========================================
+        // 6. Remove Old Container
+        // ==========================================
+        stage('Remove Old Container') {
+            steps {
+                sh 'docker rm ${CONTAINER_NAME} || true'
+            }
+        }
 
+        // ==========================================
+        // 7. Run New Docker Container
+        // ==========================================
+        stage('Run Docker Image') {
+            steps {
+                sh 'docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${IMAGE_NAME}:latest'
+            }
+        }
+
+        // ==========================================
+        // 8. Check Container
+        // ==========================================
+        stage('Check Container') {
+            steps {
+                sh 'docker ps'
+            }
+        }
+
+        // ==========================================
+        // 9. Application Information
+        // ==========================================
+        stage('Access Application') {
+            steps {
+                echo '=========================================='
+                echo 'Application deployed successfully!'
+                echo 'Application URL: http://localhost:8081'
+                echo 'Container Name: casepilot-container'
+                echo '=========================================='
+            }
+        }
     }
 
+    // ==========================================
+    // Post Actions
+    // ==========================================
     post {
+
         success {
-            echo "Build Successful!"
+            echo '=========================================='
+            echo 'Build Successful!'
+            echo 'Docker deployment completed successfully.'
+            echo '=========================================='
         }
 
         failure {
-            echo "Build Failed!"
+            echo '=========================================='
+            echo 'Build Failed!'
+            echo 'Please check the Jenkins console logs.'
+            echo '=========================================='
+        }
+
+        always {
+            echo 'Pipeline execution completed.'
         }
     }
 }
