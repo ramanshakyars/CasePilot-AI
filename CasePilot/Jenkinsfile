@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         JAVA_HOME = "/usr/lib/jvm/temurin-17-jdk-amd64"
-        PATH_PLUS_JAVA = "${JAVA_HOME}/bin"
+        PATH+JAVA = "${JAVA_HOME}/bin"
 
         IMAGE_NAME = "casepilot"
         CONTAINER_NAME = "casepilot-container"
