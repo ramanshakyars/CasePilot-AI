@@ -2,12 +2,12 @@ pipeline {
     agent any
 
     environment {
-    JAVA_HOME = "/usr/lib/jvm/temurin-17-jdk-amd64"
-    PATH = "${JAVA_HOME}/bin:${PATH}"
+        JAVA_HOME = "/usr/lib/jvm/temurin-17-jdk-amd64"
+        PATH_PLUS_JAVA = "${JAVA_HOME}/bin"
 
-    IMAGE_NAME = "casepilot"
-    CONTAINER_NAME = "casepilot-container"
-      }
+        IMAGE_NAME = "casepilot"
+        CONTAINER_NAME = "casepilot-container"
+    }
 
     stages {
 
@@ -21,7 +21,30 @@ pipeline {
         }
 
         // ==========================================
-        // 2. Give Permission to Gradle Wrapper
+        // 2. Check Java
+        // ==========================================
+        stage('Check Java') {
+            steps {
+                sh '''
+                    echo "=========================================="
+                    echo "Checking Java Configuration"
+                    echo "=========================================="
+
+                    echo "JAVA_HOME=$JAVA_HOME"
+
+                    which java
+                    java -version
+
+                    which javac
+                    javac -version
+
+                    echo "=========================================="
+                '''
+            }
+        }
+
+        // ==========================================
+        // 3. Give Permission to Gradle Wrapper
         // ==========================================
         stage('Give Permission') {
             steps {
@@ -32,7 +55,7 @@ pipeline {
         }
 
         // ==========================================
-        // 3. Build Spring Boot Project
+        // 4. Build Spring Boot Project
         // ==========================================
         stage('Build Project') {
             steps {
@@ -43,7 +66,7 @@ pipeline {
         }
 
         // ==========================================
-        // 4. Build Docker Image
+        // 5. Build Docker Image
         // ==========================================
         stage('Build Docker Image') {
             steps {
@@ -53,19 +76,8 @@ pipeline {
             }
         }
 
-
-        stage('Check Java') {
-          steps {
-        sh '''
-            echo "JAVA_HOME=$JAVA_HOME"
-            java -version
-            javac -version
-        '''
-          }
-}
-
         // ==========================================
-        // 5. Stop Old Container
+        // 6. Stop Old Container
         // ==========================================
         stage('Stop Old Container') {
             steps {
@@ -74,7 +86,7 @@ pipeline {
         }
 
         // ==========================================
-        // 6. Remove Old Container
+        // 7. Remove Old Container
         // ==========================================
         stage('Remove Old Container') {
             steps {
@@ -83,25 +95,42 @@ pipeline {
         }
 
         // ==========================================
-        // 7. Run New Docker Container
+        // 8. Run New Docker Container
         // ==========================================
         stage('Run Docker Image') {
             steps {
-                sh 'docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${IMAGE_NAME}:latest'
+                sh '''
+                    docker run -d \
+                    --name ${CONTAINER_NAME} \
+                    -p 8081:8081 \
+                    ${IMAGE_NAME}:latest
+                '''
             }
         }
 
         // ==========================================
-        // 8. Check Container
+        // 9. Check Running Container
         // ==========================================
         stage('Check Container') {
             steps {
-                sh 'docker ps'
+                sh '''
+                    echo "=========================================="
+                    echo "Running Docker Containers"
+                    echo "=========================================="
+
+                    docker ps
+
+                    echo "=========================================="
+                    echo "Container Logs"
+                    echo "=========================================="
+
+                    docker logs --tail 50 ${CONTAINER_NAME}
+                '''
             }
         }
 
         // ==========================================
-        // 9. Application Information
+        // 10. Application Information
         // ==========================================
         stage('Access Application') {
             steps {
